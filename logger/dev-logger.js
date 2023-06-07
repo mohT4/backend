@@ -1,11 +1,9 @@
 const winston = require('winston');
 
 function buildDevLogger() {
-  const formatLoger = winston.format.printf(
-    ({ level, message, timestamp, stack }) => {
-      return `${timestamp} ${level}: ${message} || ${stack}`;
-    }
-  );
+  const formatLoger = winston.format.printf(({ level, message, timestamp }) => {
+    return `${timestamp} ${level}: ${message}`;
+  });
 
   return winston.createLogger({
     level: 'debug',

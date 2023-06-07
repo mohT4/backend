@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 dotenv.config({ path: './config.env' });
 const mongoose = require('mongoose');
 
-const logger = require('./logger');
+const logger = require('./utils/logger');
 
 const userRouter = require('./routes/userRouter');
 

@@ -5,6 +5,8 @@ const dotenv = require('dotenv');
 dotenv.config({ path: './config.env' });
 const mongoose = require('mongoose');
 
+const logger = require('./utils/logger');
+
 const userRouter = require('./routes/userRouter');
 
 const app = express();
@@ -17,9 +19,9 @@ mongoose
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() => console.log('database connection established'));
+  .then(() => logger.info('database connection established'));
 
 const port = process.env.PORT;
 app.listen(port, () => {
-  console.log(`listening on port ${port}`);
+  logger.info(`listening on port ${port}`);
 });

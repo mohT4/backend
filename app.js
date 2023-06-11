@@ -2,7 +2,7 @@ const express = require('express');
 
 const dotenv = require('dotenv');
 
-dotenv.config({ path: './config.env' });
+dotenv.config();
 const mongoose = require('mongoose');
 
 const logger = require('./utils/logger');
@@ -13,7 +13,10 @@ const app = express();
 
 app.use('/api/v1/user', userRouter);
 
-const DB = process.env.DATABASE.replace('<PASSWORD>', process.env.DB_PASSWORD);
+const DB = process.env.DATABASE_URI.replace(
+  '<PASSWORD>',
+  process.env.DB_PASSWORD
+);
 mongoose
   .connect(DB, {
     useNewUrlParser: true,

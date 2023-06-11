@@ -1,7 +1,5 @@
 const express = require('express');
 
-const morgan = require('morgan');
-
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -18,9 +16,10 @@ const globalErrorHandler = require('./controllers/errorController');
 const app = express();
 app.use(express.json());
 
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-}
+app.use((req, res, next) => {
+  logger.info(`${req.method} ${req.url} - ${res.statusCode}`);
+  next();
+});
 
 app.use('/api/v1/user', userRouter);
 app.use('*', (req, res, next) =>

@@ -17,7 +17,10 @@ const app = express();
 app.use(express.json());
 
 app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.url} - ${res.statusCode}`);
+  res.on('finish', () => {
+    logger.info(`${req.method} ${req.url} - ${res.statusCode}`);
+  });
+
   next();
 });
 

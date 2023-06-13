@@ -1,20 +1,19 @@
 const express = require('express');
-
+const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 
-dotenv.config();
-const mongoose = require('mongoose');
-
 const logger = require('./utils/logger');
-
 const userRouter = require('./routes/userRouter');
-
 const AppError = require('./utils/appError');
-
 const globalErrorHandler = require('./controllers/errorController');
+const httpLoger = require('./middlewares/httpLoger');
 
+dotenv.config();
 const app = express();
+
 app.use(express.json());
+
+app.use(httpLoger);
 
 app.use('/api/v1/user', userRouter);
 app.use('*', (req, res, next) =>

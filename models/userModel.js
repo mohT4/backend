@@ -1,33 +1,33 @@
 const mongoose = require('mongoose');
-
-// eslint-disable-next-line import/no-extraneous-dependencies
-const validator = require('validator');
+const joi = require('joi');
 
 const userSchema = mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'please provide your name '],
-  },
-  email: {
-    type: String,
-    required: [true, 'please provide your email'],
-    lowercase: true,
-  },
-  password: {
-    required: [true, 'please provide your password'],
-    minlength: 8,
-    select: false,
-    validate: [validator.isEmail, 'please provide a valid email'],
-    unique: [true, 'this email is already in use'],
-  },
-  passwordConfirmation: {
-    type: String,
-    required: [true, 'please provide your password'],
-    validator: function (el) {
-      return el === this.password;
-    },
-    message: 'password does not match',
-  },
+  name: String,
+  email: String,
+  password: String,
+  passwordConfirmation: String,
+});
+
+userSchema.pre('save', async function (next) {
+  try {
+    await joi
+      .object({
+        name: joi.string().required(),
+        email: joi.string().required(),
+        password: joi.string().required(),
+        passwordConfirmation: joi
+          .string()
+          .valid(joi.ref('password'))
+          .required()
+          .message({
+            'any.only': ' password do not match',
+          }),
+      })
+      .validateAsync(this.toObject());
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
 const User = mongoose.Model('User', userSchema);

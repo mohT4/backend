@@ -6,6 +6,10 @@ const userSchema = mongoose.Schema({
   email: String,
   password: String,
   passwordConfirmation: String,
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 userSchema.pre('save', async function (next) {

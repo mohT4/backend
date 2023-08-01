@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const joi = require('joi');
+const bcrypt = require('bcryptjs');
 
 const userSchema = mongoose.Schema(
   {
@@ -16,6 +17,8 @@ const userSchema = mongoose.Schema(
 userSchema.virtual('passwordConfirmation').set(function (value) {
   this._passwordConfirmation = value;
 });
+
+userSchema.index({ email: 1 }, { unique: true });
 
 userSchema.pre('save', async function (next) {
   try {
@@ -44,7 +47,13 @@ userSchema.pre('save', async function (next) {
   }
 });
 
-userSchema.index({ email: 1 }, { unique: true });
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+
+  this.password = await bcrypt.hash(this.password, 12);
+
+  return next();
+});
 
 const User = mongoose.model('User', userSchema);
 

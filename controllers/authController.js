@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/userModel');
 const logger = require('../utils/logger');
 const AppError = require('../utils/appError');
@@ -74,4 +75,28 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
     subject: 'your password reset token (valid for now)',
     message,
   });
+});
+
+module.exports.resetPassword = catchAsync(async (req, res, next) => {
+  //get user from token
+
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(req.params.token)
+    .digest('hex');
+
+  const user = User.findOne({
+    _passwordResetToken: hashedToken,
+    _passwordExpires: { $gt: Date.now() },
+  });
+
+  if (!user)
+    next(new AppError('Invalid password reset token. please try again', 400));
+
+  //updatePassword
+  user.password = req.body.password;
+  user.passwordConfirmation = req.body.passwordConfirmation;
+  await user.save();
+
+  signToken(user._id);
 });

@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const joi = require('joi');
 const bcrypt = require('bcryptjs');
+const catchAsync = require('../utils/catchAsync');
+const crypto = require('crypto');
 
 const userSchema = mongoose.Schema(
   {
@@ -18,10 +20,19 @@ userSchema.virtual('passwordConfirmation').set(function (value) {
   this._passwordConfirmation = value;
 });
 
+userSchema.virtual('passwordResetToken').set(function (value) {
+  this._passwordResetToken = value;
+});
+
+userSchema.virtual('passwordResetExpires').set(function (value) {
+  this._passwordResetExpires = value;
+});
+
 userSchema.index({ email: 1 }, { unique: true });
 
-userSchema.pre('save', async function (next) {
-  try {
+userSchema.pre(
+  'save',
+  catchAsync(async function (next) {
     const userObj = {
       name: this.name,
       email: this.email,
@@ -42,24 +53,35 @@ userSchema.pre('save', async function (next) {
     });
     await schema.validateAsync(userObj);
     next();
-  } catch (err) {
-    next(err);
-  }
-});
+  })
+);
 
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+userSchema.pre(
+  'save',
+  catchAsync(async function (next) {
+    if (!this.isModified('password')) return next();
 
-  this.password = await bcrypt.hash(this.password, 12);
+    this.password = await bcrypt.hash(this.password, 12);
 
-  return next();
-});
+    return next();
+  })
+);
 
-userSchema.methods.correctPassword = async function (
+userSchema.methods.correctPassword = catchAsync(async function (
   givenPassword,
   userPassword
 ) {
   return await bcrypt.compare(givenPassword, userPassword);
+});
+
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(16).toString('hex');
+  _passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+  _passwordResetExpires = Date.now() + 10 * 60 * 1000;
+  return resetToken;
 };
 
 const User = mongoose.model('User', userSchema);

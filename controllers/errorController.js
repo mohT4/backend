@@ -1,4 +1,4 @@
-const logger = require('../utils/logger');
+const logger = require('../middlewares/httpLoger/index');
 
 const sendDevErr = (err, res) => {
   res.status(err.statusCode).json({

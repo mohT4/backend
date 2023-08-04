@@ -3,6 +3,7 @@ const User = require('../models/userModel');
 const logger = require('../utils/logger');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
+const sendMail = require('../utils/email');
 
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -52,10 +53,25 @@ exports.logIn = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.forgetPassword = (req, res, next) => {
+exports.forgetPassword = catchAsync(async (req, res, next) => {
   const user = req.findOne({ email: req.body.email });
 
   if (!user) return next(new AppError('invalid email address', 400));
 
   const resetToken = user.passwordResetToken();
-};
+  await user.save({ validateBeforeSave: false });
+
+  //send token to user
+
+  const resetURL = `${req.protocol}://${req.get(
+    'host'
+  )}/api/resetPassword/${resetToken}`;
+  const message = `We wanted to let you know that you can change your password at any time to keep your account secure. To reset your password, please click on the following link:
+  ${resetURL}`;
+
+  await sendMail({
+    email: user.email,
+    subject: 'your password reset token (valid for now)',
+    message,
+  });
+});

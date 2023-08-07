@@ -116,3 +116,16 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     message: 'passwords updated successfully',
   });
 });
+
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  const user = await user.findOne(req.params.id).select('+password');
+
+  if (!(await user.correctPassword(req.body.password, user.password)))
+    return next(new AppError('password is incorrect', 400));
+
+  user.password = req.body.newPassword;
+  user._passwordConfirmation = req.body.passwordConfirmation;
+  await user.save();
+
+  signToken(user._id);
+});

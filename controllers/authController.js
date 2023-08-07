@@ -39,12 +39,15 @@ exports.logIn = catchAsync(async (req, res, next) => {
 
   //check if the user exists
   const user = await User.findOne({ email }).select('+password');
-  if (!user || !(await user.correctPassword(password, user.password)))
+  if (!user || !(await user.correctPassword(password, user.password))) {
+    logger.info(user.email === email);
+    logger.info(password === user.password);
     return next(new AppError('invalid password or email ', 400));
+  }
 
-  // send token to the user
+  //send token to the user
   const token = signToken(user._id);
-
+  user.password = undefined;
   res.status(200).json({
     status: 'success',
     token: token,
@@ -55,11 +58,10 @@ exports.logIn = catchAsync(async (req, res, next) => {
 });
 
 exports.forgetPassword = catchAsync(async (req, res, next) => {
-  const user = req.findOne({ email: req.body.email });
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) return next(new AppError('invalid email address', 401));
 
-  if (!user) return next(new AppError('invalid email address', 400));
-
-  const resetToken = user.passwordResetToken();
+  const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
 
   //send token to user
@@ -69,25 +71,33 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
   )}/api/resetPassword/${resetToken}`;
   const message = `We wanted to let you know that you can change your password at any time to keep your account secure. To reset your password, please click on the following link:
   ${resetURL}`;
+  try {
+    await sendMail({
+      email: user.email,
+      subject: 'your password reset token (valid for now)',
+      message: message,
+    });
+    logger.info(resetURL);
+    res.status(200).json({
+      status: 'success',
+      message: 'Token sent to email successfully!',
+    });
+  } catch (err) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
 
-  await sendMail({
-    email: user.email,
-    subject: 'your password reset token (valid for now)',
-    message,
-  });
+    logger.info(resetURL);
+    next(new AppError('there was a problem sending your password reset token'));
+  }
 });
 
-module.exports.resetPassword = catchAsync(async (req, res, next) => {
+exports.resetPassword = catchAsync(async (req, res, next) => {
   //get user from token
 
-  const hashedToken = crypto
-    .createHash('sha256')
-    .update(req.params.token)
-    .digest('hex');
-
-  const user = User.findOne({
-    _passwordResetToken: hashedToken,
-    _passwordExpires: { $gt: Date.now() },
+  const user = await User.findOne({
+    passwordResetToken: req.params.token,
+    passwordResetExpires: { $gt: Date.now() },
   });
 
   if (!user)
@@ -96,7 +106,13 @@ module.exports.resetPassword = catchAsync(async (req, res, next) => {
   //updatePassword
   user.password = req.body.password;
   user.passwordConfirmation = req.body.passwordConfirmation;
+  user.passwordExpires = undefined;
+  user.passwordResetToken = undefined;
   await user.save();
 
   signToken(user._id);
+  res.status(200).json({
+    status: 'success',
+    message: 'passwords updated successfully',
+  });
 });

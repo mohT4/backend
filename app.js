@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 
 const logger = require('./utils/logger');
 const userRouter = require('./routes/userRouter');
+const moviesRouter = require('./routes/moviesRouter');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const httpLoger = require('./middlewares/httpLoger');
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use(httpLoger);
 
 app.use('/api/v1/user', userRouter);
+app.use('/api/v1/movies', moviesRouter);
 app.use('*', (req, res, next) =>
   next(new AppError(`can't find ${req.originalUrl} on this server`, 404))
 );

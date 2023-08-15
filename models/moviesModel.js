@@ -7,3 +7,5 @@ const moviesSchema = mongoose.Schema({
 });
 
 const Movies = mongoose.model('Movies', moviesSchema);
+
+module.exports = Movies;

@@ -1,16 +1,15 @@
-const { query, json } = require('express');
 const Movies = require('../models/moviesModel');
 const catchAsync = require('../utils/catchAsync');
-const APIFeaturs = require('../utils/apiFeatures');
-const appiFeatures = require('../utils/apiFeatures');
+const ApiFeatures = require('../utils/ApiFeatures');
 
 exports.getAllMovies = catchAsync(async (req, res, next) => {
-  const featurs = new appiFeatures(req.query, Movies.find())
+  const featurs = new ApiFeatures(Movies.find(), req.query)
     .filter()
     .fields()
-    .limit().sort;
-
+    .limit()
+    .sort();
   const movies = await featurs.query;
+
   res.status(200).json({
     status: 'success',
     data: {

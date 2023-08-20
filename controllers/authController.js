@@ -5,12 +5,42 @@ const logger = require('../utils/logger');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const sendMail = require('../utils/email');
+const { promisify } = require('util');
+const { decode } = require('punycode');
 
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 };
+
+exports.protect = catchAsync(async (req, res, next) => {
+  let token;
+
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer ')
+  )
+    token = req.headers.authorization.split(' ')[1];
+
+  if (!token)
+    return next(
+      new AppError('you must be logged in to access this route', 400)
+    );
+
+  const decode = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+  const freshUser = await User.findById(decode.id);
+  if (!freshUser) return next('this user does not exist', 400);
+
+  // const changedPassword = freshUser.updatedAt('iat');
+
+  // if (changedPassword)
+  //   return next(new AppError('the password was changed', 400));
+
+  req.user = freshUser;
+  next();
+});
 
 exports.signUp = catchAsync(async (req, res, next) => {
   const newUser = await User.create({

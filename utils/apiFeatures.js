@@ -1,5 +1,5 @@
-class appiFeatures {
-  constructor(queryObject, query) {
+class ApiFeatures {
+  constructor(query, queryObject) {
     this.queryObject = queryObject;
     this.query = query;
   }
@@ -7,10 +7,10 @@ class appiFeatures {
   filter() {
     const queryString = { ...this.queryObject };
     const excludeFields = ['sort', 'fields', 'limit', 'page'];
-
     excludeFields.forEach((e) => delete queryString[e]);
+
     let queryStrg = JSON.stringify(queryString);
-    queryString = queryString.replace(
+    queryStrg = queryStrg.replace(
       /\b(gte|gt|lte|lt)\b/g,
       (match) => `$${match}`
     );
@@ -51,4 +51,4 @@ class appiFeatures {
   }
 }
 
-module.exports = appiFeatures;
+module.exports = ApiFeatures;
